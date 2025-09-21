@@ -8,13 +8,18 @@
 import SwiftUI
 
 struct TestView2: View {
+
     
     var arrayOfChoices = [ChoiceOfUnits(unit: "metre"), ChoiceOfUnits(unit: "litres"), ChoiceOfUnits(unit: "kilometre")]
     
+    @State var selectedChoice: ChoiceOfUnits?
+    
     var body: some View {
-        List(arrayOfChoices, id: \.self.unit) { choice in
-            Text(choice.unit)
-        }
+                Picker("Select unit", selection: $selectedChoice) {
+                    ForEach (arrayOfChoices, id: \.self.unit) { choice in
+                        Text(choice.unit)
+                    }
+                }
     }
 }
 

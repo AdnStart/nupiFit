@@ -6,68 +6,168 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct FoodItemInputView: View {
     
+    @Environment(\.modelContext) private var context
+    @FocusState private var isFocusedField: focusFields?
+    @State private var incompleteFieldsAlert: Bool = false
+    @State private var savedConfirmationAlert: Bool = false
     @State private var name: String = ""
     @State private var brand: String = ""
+    @State private var typeIcon: TypeIcons = .manufactured
+    @State private var fat: String = ""
+    @State private var carbs: String = ""
+    @State private var protein: String = ""
     @State private var portionAmount: String = ""
     @State private var portionUnit: String = ""
     @State private var portionAmountSI: String = ""
     @State private var portionUnitSI: String = ""
-    @State private var fat: String = ""
-    @State private var carbs: String = ""
-    @State private var protein: String = ""
+    @Query var units: [ChoiceOfUnits]
+    
+    private enum focusFields: Hashable {
+        case fieldName, fieldBrand, fieldAmount, fieldFat, fieldCarbs, fieldProtein
+    }
+    
+    private enum TypeIcons: String, CaseIterable {
+        case manufactured  = "cart"
+        case natureProduct = "carrot"
+        case selfPrepared  = "frying.pan"
+    }
     
     
-    
-    var  foodItem: FoodItem
     
     var body: some View {
         VStack {
             HStack {
                 Spacer()
                 Button {
-                    print("Touched!")
+                    if name.isEmpty || brand.isEmpty || portionAmount.isEmpty || portionUnit.isEmpty || (protein.isEmpty && carbs.isEmpty && fat.isEmpty) {
+                        incompleteFieldsAlert = true
+                    } else {
+                        let foodItem = FoodItem(name: name, brand: brand, typeIcon: typeIcon.rawValue, basePortionQuantity: castStringToDouble(portionAmount)!, basePortionUnit: portionUnit, fat: castStringToDouble(fat) ?? 0, carbs: castStringToDouble(carbs) ?? 0, protein: castStringToDouble(protein) ?? 0, basePortionSIQuantity: castStringToDouble(portionUnitSI), basePortionSIUnit: portionUnitSI)
+                        context.insert(foodItem)
+                        name = ""
+                        brand = ""
+                        typeIcon = .manufactured
+                        fat = ""
+                        carbs = ""
+                        protein = ""
+                        portionAmount = ""
+                        portionUnit = ""
+                        portionAmountSI = ""
+                        portionUnitSI = ""
+                    }
                 } label: {
                     Text("Save")
                 }.padding()
+                    .alert(isPresented: $incompleteFieldsAlert) {
+                        Alert(title: Text("Missing mandatory fields"))
+                    }
+                    .alert(isPresented: $savedConfirmationAlert) {
+                        Alert(title: Text("Saved!"))
+                    }
             }
             Image (systemName: "carrot")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 200, height: 200)
-                .foregroundStyle(.orange)
+                .frame(width: 130, height: 130)
+                .foregroundStyle(.purple)
+                .padding()
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray, lineWidth: 1))
                 .padding(.bottom)
             Form {
-                Section(header: Text("Name")) {
-                    TextField("Name", text: $name)
-                    TextField("Brand", text: $brand)
+                HStack {
+                    Text("Name").foregroundStyle(.secondary)
+                    TextField ("Name", text: $name).focused($isFocusedField, equals: .fieldName)
                 }
-                Section(header: Text("Portion Definition")) {
-                    HStack (alignment: .center){
-                        Text("Custom").frame(maxWidth: .infinity, alignment: .leading)
-                        TextField("Amount", text: $portionAmount).numberInputValidation($portionAmount).frame(maxWidth: .infinity)
-                        TextField("Unit", text: $portionUnit).frame(maxWidth: .infinity)
-                    }
-                    HStack (alignment: .center) {
-                        Text("SI").frame(maxWidth: .infinity, alignment: .leading)
-                        TextField("Amount", text: $portionAmountSI).numberInputValidation($portionAmountSI).frame(maxWidth: .infinity)
-                        TextField("Unit", text: $portionUnitSI).frame(maxWidth: .infinity)
-                    }
+                HStack {
+                    Text("Brand").foregroundStyle(.secondary)
+                    TextField("Brand", text: $brand).focused( $isFocusedField, equals: .fieldBrand)
                 }
-                Section(header: Text("Macros per portion in grams\nfat / carbs / protein")) {
-                    HStack{
-                        TextField(text: $fat, label: {Text("fat")}).numberInputValidation($fat).frame(maxWidth: .infinity)
-                        TextField(text: $carbs, label: {Text("carbs")}).numberInputValidation($carbs).frame(maxWidth: .infinity)
-                        TextField(text: $protein, label: {Text("protein")}).numberInputValidation($carbs).frame(maxWidth: .infinity)
+                Picker("Icon", selection: $typeIcon) {
+                    ForEach (TypeIcons.allCases, id: \.self.rawValue) { icon in
+                        Image(systemName: icon.rawValue).tag(icon.rawValue)
                     }
-                    HStack {
-                        Spacer()
-                        Text("Total Calories: \(String(format: "%.2f", calculateCalories(fat: fat, carbs: carbs, protein: protein))) kCal")
-                    }
+                }.foregroundStyle(.secondary).tint(.black)
+                HStack {
+                    Text("Portion amount").foregroundStyle(.secondary)
+                    TextField ("(custom)", text: $portionAmount)
+                        .numberInputValidation($portionAmount)
+                        .keyboardType(.decimalPad)
+                        .focused( $isFocusedField, equals: .fieldAmount)
+                        .tint(.secondary)
                 }
+                Picker("Unit", selection: $portionUnit) {
+                    ForEach (units, id: \.self.unit) { unitObject in
+                        Text(unitObject.unit)
+                    }
+                }.foregroundStyle(.secondary).tint(.black)
+                HStack {
+                    Text("Amount in SI").foregroundStyle(.secondary)
+                    TextField("(optional)", text: $portionAmountSI)
+                }
+                Picker("SI unit (optional)", selection: $portionUnitSI) {
+                    ForEach (units, id: \.self.unit) { unitObject in
+                        Text(unitObject.unit)
+                    }
+                }.foregroundStyle(.secondary).tint(.black)
+                HStack {
+                    Text("Fat").foregroundStyle(.secondary)
+                    TextField(text: $fat, label: {Text("fat")})
+                        .numberInputValidation($fat)
+                        .keyboardType(.decimalPad)
+                        .focused( $isFocusedField, equals: .fieldFat)
+                }
+                HStack {
+                    Text("Carbs").foregroundStyle(.secondary)
+                    TextField(text: $carbs, label: {Text("carbs")})
+                        .numberInputValidation($carbs)
+                        .keyboardType(.decimalPad)
+                        .focused( $isFocusedField, equals: .fieldCarbs)
+                }
+                HStack {
+                    Text("Protein").foregroundStyle(.secondary)
+                    TextField(text: $protein, label: {Text("protein")})
+                        .numberInputValidation($carbs)
+                        .keyboardType(.decimalPad)
+                        .focused( $isFocusedField, equals: .fieldProtein)
+                }
+                Text("Total Calories: \(String(format: "%.2f", calculateCalories(fat: fat, carbs: carbs, protein: protein))) kCal")
             }
+            .toolbar(content: {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button {
+                        if let currentFocusedField = isFocusedField {
+                            switch currentFocusedField {
+                            case .fieldName:
+                                isFocusedField = .fieldBrand
+                            case .fieldBrand:
+                                isFocusedField = .fieldAmount
+                            case .fieldAmount:
+                                isFocusedField = .fieldFat
+                            case .fieldFat:
+                                isFocusedField = .fieldCarbs
+                            case .fieldCarbs:
+                                isFocusedField = .fieldProtein
+                            default:
+                                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                            }
+                        }
+                    } label: {
+                        Text("Next")
+                    }
+                    Button {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    } label: {
+                        Image(systemName: "keyboard.chevron.compact.down")
+                    }
+                    
+                }
+            })
+            
         }
     }
     
@@ -85,27 +185,5 @@ struct FoodItemInputView: View {
 
 
 #Preview {
-    FoodItemInputView(foodItem: FoodItem(name: "foodName", brand: "foodBrand", fat: 10, carbs: 20, protein: 30, basePortionQuantity: 1, basePortionUnit: "Saucisse", basePortionSIQuantity: 30, basePortionSIUnit: "g"))
+    FoodItemInputView()
 }
-
-
-//    }
-//    VStack (alignment: .leading, spacing: 20) {
-//        HStack {
-//            TextField(text: $fat, label: {Text("fat (g)")}).numberInputValidation($fat).frame(width: 100)
-//            Text("fat (g)").italic()
-//            Spacer()
-//        }
-//        HStack {
-//            TextField(text: $carbs, label: {Text("carbs (g)")}).numberInputValidation($carbs).frame(width: 100)
-//            Text("carbs (g)").italic()
-//            Spacer()
-//        }
-//        HStack {
-//            TextField(text: $protein, label: {Text("protein (g)")}).numberInputValidation($protein).frame(width: 100)
-//            Text("protein (g)").italic()
-//            Spacer()
-//        }
-//        Text("Total Calories: \(String(format: "%.2f", calculateCalories(fat: fat, carbs: carbs, protein: protein))) kCal")
-//    }
-//}

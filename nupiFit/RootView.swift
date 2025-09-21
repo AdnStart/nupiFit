@@ -11,10 +11,16 @@ struct RootView: View {
     var body: some View {
         TabView {
             Tab("AddUnits", systemImage: "plus") {
-                AddUnitsView()
+                FoodItemInputView()
             }
             Tab("Testing", systemImage: "testtube.2") {
-                TestView()
+                TestView2()
+            }
+            Tab("Settings", systemImage: "carrot") {
+                TestView3()
+            }
+            Tab("Settings", systemImage: "gearshape") {
+                SettingsView()
             }
         }
     }

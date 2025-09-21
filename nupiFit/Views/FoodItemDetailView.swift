@@ -50,5 +50,5 @@ struct FoodItemDetailView: View {
 }
 
 #Preview {
-    FoodItemDetailView(foodItem: FoodItem(name: "foodName", brand: "foodBrand", fat: 10, carbs: 20, protein: 30, basePortionQuantity: 1, basePortionUnit: "Saucisse", basePortionSIQuantity: 30, basePortionSIUnit: "g"))
+    FoodItemDetailView(foodItem: FoodItem(name: "foodName", brand: "foodBrand", typeIcon: "cart", basePortionQuantity: 10, basePortionUnit: "g", fat: 30, carbs: 1, protein: 40, kcal: 30))
 }
