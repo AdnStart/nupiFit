@@ -14,7 +14,17 @@ struct RootView: View {
                 AddUnitsView()
             }
             Tab("Testing", systemImage: "testtube.2") {
+<<<<<<< Updated upstream
                 TestView()
+=======
+                TestView2()
+            }
+            Tab("Settings", systemImage: "carrot") {
+                FoodItemsListView()
+            }
+            Tab("Settings", systemImage: "gearshape") {
+                SettingsView()
+>>>>>>> Stashed changes
             }
         }
     }

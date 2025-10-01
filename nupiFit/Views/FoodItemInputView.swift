@@ -9,16 +9,33 @@ import SwiftUI
 
 struct FoodItemInputView: View {
     
+<<<<<<< Updated upstream
+=======
+    private enum AlertToDisplay { case incompleteFields, savedConfirmation}
+    
+    @Environment(\.modelContext) private var context
+    @FocusState private var isFocusedField: focusFields?
+    @State private var showAlert: Bool = false
+    @State private var whichAlert: AlertToDisplay?
+>>>>>>> Stashed changes
     @State private var name: String = ""
     @State private var brand: String = ""
     @State private var portionAmount: String = ""
     @State private var portionUnit: String = ""
     @State private var portionAmountSI: String = ""
     @State private var portionUnitSI: String = ""
+<<<<<<< Updated upstream
     @State private var fat: String = ""
     @State private var carbs: String = ""
     @State private var protein: String = ""
     
+=======
+    @Query var units: [ChoiceOfUnits]
+    
+    private enum focusFields: Hashable {
+        case fieldName, fieldBrand, fieldAmount, fieldFat, fieldCarbs, fieldProtein
+    }
+>>>>>>> Stashed changes
     
     
     var  foodItem: FoodItem
@@ -27,12 +44,46 @@ struct FoodItemInputView: View {
         VStack {
             HStack {
                 Spacer()
+<<<<<<< Updated upstream
                 Button {
                     print("Touched!")
                 } label: {
                     Text("Save")
                 }.padding()
             }
+=======
+                Button ("Save") {
+                    if name.isEmpty || brand.isEmpty || portionAmount.isEmpty || portionUnit.isEmpty || (protein.isEmpty && carbs.isEmpty && fat.isEmpty) {
+                        whichAlert = .incompleteFields
+                        showAlert = true
+                    } else {
+                        let foodItem = FoodItem(name: name, brand: brand, typeIcon: typeIcon.rawValue, basePortionQuantity: castStringToDouble(portionAmount)!, basePortionUnit: portionUnit, fat: castStringToDouble(fat) ?? 0, carbs: castStringToDouble(carbs) ?? 0, protein: castStringToDouble(protein) ?? 0, basePortionSIQuantity: castStringToDouble(portionUnitSI), basePortionSIUnit: portionUnitSI)
+                        context.insert(foodItem)
+                        whichAlert = .savedConfirmation
+                        showAlert = true
+                        name = ""
+                        brand = ""
+                        typeIcon = .manufactured
+                        fat = ""
+                        carbs = ""
+                        protein = ""
+                        portionAmount = ""
+                        portionUnit = ""
+                        portionAmountSI = ""
+                        portionUnitSI = ""
+                    }
+                    
+                }
+                .alert(isPresented: $showAlert) {
+                    switch whichAlert {
+                    case .incompleteFields:
+                        Alert(title: Text("Missing manadonary fields!"))
+                    default:
+                        Alert(title: Text("Item saved!"))
+                    }
+                }
+            }.padding()
+>>>>>>> Stashed changes
             Image (systemName: "carrot")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -44,11 +95,21 @@ struct FoodItemInputView: View {
                     TextField("Name", text: $name)
                     TextField("Brand", text: $brand)
                 }
+<<<<<<< Updated upstream
                 Section(header: Text("Portion Definition")) {
                     HStack (alignment: .center){
                         Text("Custom").frame(maxWidth: .infinity, alignment: .leading)
                         TextField("Amount", text: $portionAmount).numberInputValidation($portionAmount).frame(maxWidth: .infinity)
                         TextField("Unit", text: $portionUnit).frame(maxWidth: .infinity)
+=======
+                HStack {
+                    Text("Brand").foregroundStyle(.secondary)
+                    TextField("Brand", text: $brand).focused( $isFocusedField, equals: .fieldBrand)
+                }
+                Picker("Icon", selection: $typeIcon) {
+                    ForEach (TypeIcons.allCases, id: \.self.rawValue) { icon in
+                        Image(systemName: icon.rawValue).tag(icon)
+>>>>>>> Stashed changes
                     }
                     HStack (alignment: .center) {
                         Text("SI").frame(maxWidth: .infinity, alignment: .leading)
@@ -82,6 +143,7 @@ struct FoodItemInputView: View {
         return Double(string.replacingOccurrences(of: ",", with: "."))
     }
 }
+
 
 
 #Preview {
